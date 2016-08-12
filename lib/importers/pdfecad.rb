@@ -26,11 +26,11 @@ class Importers::PdfEcad
   def right_holder(line)
     return nil if !line.match(/[0-9]{1,3}\,[0-9]{0,2}/) #return nil if line is not a right holder (using share identifier)
     ipi_match = line.match(/[0-9]+[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9]/).to_s.split('.').join
-    right_holder = { :name => line[10,40].strip,
-                    :pseudos => [{name: line[50,25].strip, main: true}],
+    right_holder = { :name => line[10,39].strip,
+                    :pseudos => [{name: line[49,25].strip, main: true}],
                     :ipi => !ipi_match.empty? ? ipi_match : nil,
                     :share => line.match(/[0-9]{1,3}\,[0-9]{0,2}/).to_s.gsub(/,/,'.').to_f,
-                    :society_name => line.match(/[0-9] [A-Z]{3,9}/).to_s[2..-1],
+                    :society_name => line.match(/  SICAM|([0-9] [A-Z]{3,9})/).to_s[2..-1],
                     :external_ids => [{source_name: "Ecad", source_id: line[0,10].strip}],
                     :role => CATEGORIES[line.match(/[A-Z]{1,2}\s{1,3}[0-9]/).to_s[0,3].strip]
                    }
@@ -38,6 +38,7 @@ class Importers::PdfEcad
 
 
   def work(line)
+    return nil if line.match(/[0-9]{1,3}\,[0-9]{0,2}/) #return nil if line is not a right holder (using share identifier)
     aux_hash ={:iswc => line[13,15].strip,
                :title => line[35,50].strip,
                :external_ids => [{source_name: "Ecad", source_id: line[0,10].strip}],
