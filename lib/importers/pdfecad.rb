@@ -10,8 +10,8 @@ class Importers::PdfEcad
   end
 
   def works
+    return @array if !@array.empty? # return the works array if is not empty
     @reader.pages.each do |page|
-      aux_hash = {:right_holders => []}
       page.text.each_line do |line|
         if line.match(/ LB+[ |\/]/) # book info
           @array << work(line)
@@ -20,7 +20,7 @@ class Importers::PdfEcad
         end
       end
     end
-    return @array
+    @array
   end
 
   def right_holder(line)
@@ -36,7 +36,6 @@ class Importers::PdfEcad
                    }
   end
 
-
   def work(line)
     return nil if line.match(/[0-9]{1,3}\,[0-9]{0,2}/) #return nil if line is not a right holder (using share identifier)
     aux_hash ={:iswc => line[13,15].strip,
@@ -48,9 +47,3 @@ class Importers::PdfEcad
               }
   end
 end
-#
-#
-# @importer = Importers::PdfEcad.new("../../pdf/careqa.pdf")
-# line = "741          VELAS PROD. ARTISTICAS MUSICAIS E      VELAS                    247.22.09.80 ABRAMUS           E   8,33 20/09/95               2"
-# rh = @importer.right_holder(line)
-# puts rh[:share]
