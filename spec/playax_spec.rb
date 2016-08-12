@@ -9,7 +9,7 @@ describe "Ecad PDF Import" do
     @importer.works.count.should == 130
     @importer.works[0][:iswc].should == "T-039.782.970-7"
     @importer.works.last[:external_ids][0][:source_id].should == "126227"
-    # @importer.works[9][:right_holders].size.should == 4
+    @importer.works[9][:right_holders].size.should == 4
     @importer.works[9][:right_holders][2][:share].should == 25.00
   end
 
@@ -20,9 +20,9 @@ describe "Ecad PDF Import" do
     rh[:pseudos][0][:name].should == "CARLOS CAREQA"
     rh[:pseudos][0][:main].should == true
     rh[:role].should == "Author"
-    # rh[:society_name].should == "ABRAMUS"
+    rh[:society_name].should == "ABRAMUS"
     rh[:ipi].should == "582662818"
-    # rh[:external_ids][0][:source_name].should == "Ecad"
+    rh[:external_ids][0][:source_name].should == "Ecad"
     rh[:external_ids][0][:source_id].should == "4882"
     rh[:share].should == 100
   end

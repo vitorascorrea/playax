@@ -2,8 +2,7 @@ require 'pdf-reader'
 require_relative './../importers'
 
 class Importers::PdfEcad
-  #corrigir aqui
-  CATEGORIES = {"DC" => "Author", "SM" => "Author", "CA" => "Author", "C" => "Author", "E" => "Publisher", "V" => "Versionist", "SE" => "SubPublisher"}
+  CATEGORIES = {"CA" => "Author", "E" => "Publisher", "V" => "Versionist", "SE" => "SubPublisher"}
 
   def initialize(path)
     @reader = PDF::Reader.new(path)
@@ -15,46 +14,42 @@ class Importers::PdfEcad
       aux_hash = {:right_holders => []}
       page.text.each_line do |line|
         if line.match(/ LB+[ |\/]/) # book info
-          aux_hash = create_book_hash(line)
-          @array << aux_hash
-        elsif line.match(/[0-9]+[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9]/) # right holders
-            aux_hash[:right_holders] << dry_right_holder(line)
+          @array << work(line)
+        elsif line.match(/([0-9]+[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9])|SICAM/) # right holders
+            @array.last[:right_holders] << right_holder(line)
         end
       end
     end
     return @array
   end
 
-  def dry_right_holder(line)
+  def right_holder(line)
+    return nil if !line.match(/[0-9]{1,3}\,[0-9]{0,2}/) #return nil if line is not a right holder (using share identifier)
+    ipi_match = line.match(/[0-9]+[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9]/).to_s.split('.').join
     right_holder = { :name => line[10,40].strip,
                     :pseudos => [{name: line[50,25].strip, main: true}],
-                    :ipi => line.match(/[0-9]+[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9]\.[0-9]+[0-9]/).to_s.split('.').join,
-                    :share => line.match(/[0-9]{2,3}\,[0-9]{0,2}/).to_s.to_f,
-                    :role => CATEGORIES.select{|key, value| key == line.match(/   [A-Z]{1,2} /).to_s.strip}.values[0] }
-  end
-
-  def right_holder(line)
-    return @array.find{|hash| hash["line_text"] == line}
+                    :ipi => !ipi_match.empty? ? ipi_match : nil,
+                    :share => line.match(/[0-9]{1,3}\,[0-9]{0,2}/).to_s.gsub(/,/,'.').to_f,
+                    :society_name => line.match(/[0-9] [A-Z]{3,9}/).to_s[2..-1],
+                    :external_ids => [{source_name: "Ecad", source_id: line[0,10].strip}],
+                    :role => CATEGORIES[line.match(/[A-Z]{1,2}\s{1,3}[0-9]/).to_s[0,3].strip]
+                   }
   end
 
 
   def work(line)
-    return @array.find{|hash| hash["line_text"] == line}
-  end
-
-  def create_book_hash(line)
-    aux_hash ={:iswc => line[13,15],
+    aux_hash ={:iswc => line[13,15].strip,
                :title => line[35,50].strip,
                :external_ids => [{source_name: "Ecad", source_id: line[0,10].strip}],
                :situation => line[93,8].strip,
                :created_at => line[108,14].strip,
-               :right_holders => [],
-               :line_text => line
+               :right_holders => []
               }
   end
 end
-
+#
+#
 # @importer = Importers::PdfEcad.new("../../pdf/careqa.pdf")
-# line = "4882         CARLOS DE SOUZA                        CARLOS CAREQA            582.66.28.18 ABRAMUS          CA   100,                        1"
+# line = "741          VELAS PROD. ARTISTICAS MUSICAIS E      VELAS                    247.22.09.80 ABRAMUS           E   8,33 20/09/95               2"
 # rh = @importer.right_holder(line)
-# puts rh.nil?
+# puts rh[:share]
